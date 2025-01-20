@@ -128,3 +128,36 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+
+# ===========================
+# Above is the standard node .gitignore
+# Below is React stuff copied from my other project.
+# It may be duplicative or eve nconflict withj above.
+# Will fix it if needed. 
+
+# dependencies
+/frontend/node_modules
+/frontend/.pnp
+.pnp.js
+
+# testing
+/frontend/coverage
+
+# production
+/frontend/build
+
+# misc
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ===========================
+# Mac noise
+.DS_Store
