@@ -3,7 +3,13 @@ import { v4 as uuidv4 } from 'uuid';
 // import logo from './logo.svg';
 import './App.css';
 // import DictionaryTable from './components/DictionaryTable';
-import { OxideCollection, OxideBinary, OxideFunction, OxideBasicBlock, OxideInstruction } from './models/OxideCollection.js';
+import { 
+  OxideCollection, 
+  OxideBinary, 
+  OxideFunction, 
+  OxideBasicBlock, 
+  OxideInstruction 
+} from './models/OxideData.js';
 
 function App() 
 {
