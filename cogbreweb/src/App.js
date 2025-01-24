@@ -2,18 +2,23 @@ import React, { useState, useRef, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 // import logo from './logo.svg';
 import './App.css';
-// import DictionaryTable from './DictionaryTable';
-
+// import DictionaryTable from './components/DictionaryTable';
+import OxideCollection from './models/OxideCollection';
+import OxideBinary from './models/OxideBinary';
 
 function App() {
 
   // State: variables whose state changes cause app re-render
   const [uuid, setUuid] = useState('');
   const [debuggingMessage, setDebuggingMessage] = useState('');
-  const [oxideCollectionNames, setOxideCollectionNames] = useState([]);
+
+  const [collectionNamesPulldown, setCollectionNamesPulldown] = useState([]);
   const [selectedCollection, setSelectedCollection] = useState('');
-  const [selectedCID, setSelectedCID] = useState('');
-  const [selectedCollectionOIDs, setSelectedCollectionOIDs] = useState([]);
+  
+  const [binaryNamesPulldown, setBinaryNamesPulldown] = useState([]);
+  const [selectedBinary, setSelectedBinary] = useState('');
+
+  const [collectionMap, setCollectionMap] = useState(null);
 
   // Refs: variables whose state is preserved across re-renders
   // const testButtonCounter = useRef(0);
@@ -24,7 +29,7 @@ function App() {
   }
 
   // Post a command to Nexus and return the response.
-  const nexusSync = async (commandList) => {
+  async function nexusSync(commandList) {
     try {
       const payload = { 
         sessionId: sessionStorage.getItem('uuid'), 
@@ -51,40 +56,102 @@ function App() {
     }
   }
 
-  const debugMessage = (message) => {
+  function debugMessage(message) {
     setDebuggingMessage(message + '\n' + debuggingMessage);
   }
 
+  async function initializeSession() {
+    // Initialize the session
+    const initResponse = await nexusSync(['session_init_web', {}]);
+    debugMessage('Session init: ' + JSON.stringify(initResponse));
+
+    // Get collection names
+    const collectionNamesResponse = await nexusSync(['oxide_collection_names']);
+    const collectionNameList = JSON.parse(collectionNamesResponse);
+
+    // Build collection objects and collection map
+    const collectionMap = new Map();
+    for (const collectionName of collectionNameList) {
+      try {
+        let collectionId = await nexusSync(['oxide_get_cid_from_name', collectionName]);
+        console.log("Processing: ", collectionName, collectionId);
+        collectionId = collectionId.replace(/"/g, '');
+        collectionMap.set(collectionName, new OxideCollection(collectionId, collectionName, null, null));
+      } catch (error) {
+        console.error(`Error processing collection ${collectionName}:`, error);
+      }
+    }
+    setCollectionMap(collectionMap);
+
+    // Put collection names in pulldown menu
+    const sortedCollectionNames = Array.from(collectionMap.keys()).sort();
+    setCollectionNamesPulldown(sortedCollectionNames);
+
+    debugMessage('Collections: ' + sortedCollectionNames);
+  }
+
+  async function processBinaries(collection) {
+    collection.binaryMap = new Map();  
+    try {
+      const oidListJson = await nexusSync(['oxide_get_oids_with_cid', collection.collectionId]);
+      const oidList = JSON.parse(oidListJson);  
+      console.log("TIRED! ", oidListJson);
+      for (const oid of oidList) {
+        try {
+          const binaryNameListJson = await nexusSync(['oxide_get_names_from_oid', oid]);
+          const binaryNameList = JSON.parse(binaryNameListJson);
+          let binaryName = "Nameless Binary";        
+          if (binaryNameList.length > 0) {
+            binaryName = binaryNameList[0];
+          }
+          const size = await nexusSync(['oxide_get_oid_file_size', oid]);
+          const binary = new OxideBinary(oid, binaryName, size);
+          binary.parentCollection = collection;
+          collection.binaryMap.set(binaryName, binary);
+        } catch (error) {
+          console.error(`Error processing OID ${oid}:`, error);
+        }  
+      }
+    } catch (error) {
+      console.error("Error processing binaries:", error);
+    }
+    return collection.binaryMap;
+  }
+
+  // Handle selecting a new collection
+  async function handleCollectionChange(event) {
+    const collectionName = event.target.value;
+    setSelectedCollection(collectionName);
+    console.log("CRAP ", collectionName, collectionMap.size);
+    console.log("DERPPPPP: ", collectionMap.keys());
+    const currCollection = collectionMap.get(collectionName);
+    console.log("CRAP2 " + currCollection.name);
+    if (currCollection.binaryMap == null)
+    {
+      await processBinaries(currCollection);
+    }
+    const sortedBinaryNames = Array.from(currCollection.binaryMap.keys()).sort();
+    setBinaryNamesPulldown(sortedBinaryNames);
+  }
+
+  // Handle selecting a new binary
+  async function handleBinaryChange(event) {
+    const binaryName = event.target.value;
+    setSelectedBinary(binaryName);
+    const currCollection = collectionMap.get(selectedCollection);
+    const currBinary = currCollection.binaryMap[binaryName];
+    // do more stuff...
+  }
+
   // Handle clicking the close session button
-  const handleCloseSessionClick = async () => {
+  async function handleCloseSessionClick() {
     nexusSync(['session_close'])
     .then((responseData) => {
       debugMessage('Session close: ' + JSON.stringify(responseData));
+      setUuid("");
     });
-  };
-
-  // Handle selecting a new collection
-  const handleCollectionChange = (event) => {
-    const collection = event.target.value;
-    setSelectedCollection(collection);
-
-    // Get the collection's CID
-    nexusSync(['oxide_get_cid_from_name', collection])
-    .then((responseData) => {
-      const selectedCIDTemp = JSON.parse(responseData)
-      setSelectedCID(selectedCIDTemp);
-      // debugMessage('CID: ' + responseData);
-
-      // Get the OIDs associated with the CID
-      nexusSync(['oxide_get_oids_with_cid', selectedCIDTemp])
-      .then((responseData) => {
-        setSelectedCollectionOIDs(JSON.parse(responseData));
-        debugMessage('Collection OIDs: ' + responseData);
-      });
-    });
-
-
-  };
+  }
+  
 
   // Executes upon every render. Sometimes twice (in dev mode). 
   useEffect(() => {
@@ -102,25 +169,13 @@ function App() {
     {
       // HACK: Temporarily disable to simplify debugging...
       // sessionStorage.setItem('sessionInitialized', true);
-
-      // Initialize the session
-      nexusSync(['session_init_web', {}])
-        .then((responseData) => {
-          debugMessage('Session init: ' + JSON.stringify(responseData));
-        });
-
-      // Get collections
-      nexusSync(['oxide_collection_names'])
-        .then((responseData) => {
-          setOxideCollectionNames(JSON.parse(responseData));
-          debugMessage('Collections: ' + responseData);
-        });
+      initializeSession();
     }
-
   }, []); 
   // ABOVE: The list at the end of useEffect contains dependencies. 
   // Only re-run useEffect upon re-render if a dependency has changed.
   // Empty list means never re-run it. Missing list means always re-run it.
+
 
   return (
     <div className="App">
@@ -135,13 +190,28 @@ function App() {
           <option value="" disabled>
             Select an option
           </option>
-          {oxideCollectionNames.map((option, index) => (
+          {collectionNamesPulldown.map((option, index) => (
             <option key={index} value={option}>
               {option}
             </option>
           ))}
         </select>
         <p>Selected collection: {selectedCollection}</p>
+      </div>
+
+      <div>
+        <label htmlFor="dropdown">Choose a binary:</label>
+        <select id="dropdown" value={selectedBinary} onChange={handleBinaryChange}>
+          <option value="" disabled>
+            Select an option
+          </option>
+          {binaryNamesPulldown.map((option, index) => (
+            <option key={index} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+        <p>Selected binary: {selectedBinary}</p>
       </div>
 
       <button onClick={handleCloseSessionClick}>Close session</button> 
