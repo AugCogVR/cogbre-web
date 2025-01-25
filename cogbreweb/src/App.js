@@ -1,8 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-// import logo from './logo.svg';
 import './App.css';
-// import DictionaryTable from './components/DictionaryTable';
 import { 
   OxideCollection, 
   OxideBinary, 
@@ -12,6 +10,7 @@ import {
   OxideDecompLine
 } from './models/OxideData';
 import MessageBox from './components/MessageBox';
+import ImageBox from './components/ImageBox';
 
 function App() 
 {
@@ -30,6 +29,8 @@ function App()
   const [selectedFunction, setSelectedFunction] = useState('');
 
   const [messageBoxes, setMessageBoxes] = useState([]);
+
+  const [imageBoxes, setImageBoxes] = useState([]);
 
   // Refs: variables whose state is preserved across re-renders
   // const testButtonCounter = useRef(0);
@@ -130,13 +131,31 @@ function App()
     };
     setMessageBoxes([...messageBoxes, newMessageBox]);
     console.log("MESSAGE BOX: ", message);
-    return newMessageBox.id;
   }
 
   // Remove a message box by ID
   function removeMessageBox(id) 
   {
     setMessageBoxes(messageBoxes.filter((box) => box.id !== id));
+  }
+
+  // Add a new image box 
+  function addImageBox(title, imageUrl)
+  {
+    const newImageBox = 
+    {
+      id: Date.now(), // Use current timestamp as unique ID
+      title: title,
+      imageUrl: imageUrl,
+    };
+    setImageBoxes([...imageBoxes, newImageBox]);
+    console.log("IMAGE BOX: ", imageUrl);
+  }
+
+  // Remove an image box by ID
+  function removeImageBox(id)
+  {
+    setImageBoxes(imageBoxes.filter((box) => box.id !== id));
   }
 
   // Initialize the sesison with Nexus, get the list of collections,
@@ -649,7 +668,11 @@ function App()
   // Handle clicking Call Graph button
   async function handleCallGraphClick() 
   {
-    console.log("CALL GRAPH YAY");
+    const currCollection = collectionMap.get(selectedCollection);
+    const currBinary = currCollection.binaryMap.get(selectedBinary);
+    const imageUrl = `/images/${currBinary.oid}-callgraph.png`;
+    console.log("IMAGE BOX: ", imageUrl);
+    await addImageBox(`Call Graph for ${selectedBinary}`, imageUrl);
   }
   
   // Handle selecting a new function
@@ -744,8 +767,8 @@ function App()
         markedUp += `<color=#AAAA00> |${offset}|`;
       });
     
-      markedUp += "\n";
-      plainText += "\n";
+      markedUp += '\n';
+      plainText += '\n';
     
       if (code.includes('{')) 
       {
@@ -760,7 +783,7 @@ function App()
   // Handle clicking CFG button
   async function handleCFGClick() 
   {
-    console.log("CFG YAY");
+    console.log('CFG YAY');
   }
   
 
@@ -883,6 +906,19 @@ function App()
             title={box.title}
             message={box.message} 
             onRemove={removeMessageBox} 
+          />
+        ))}
+      </div>
+
+      <hr />
+      <h3>Graphs</h3>
+      <div className="image-box-gallery">
+        {imageBoxes.map(({ id, title, imageUrl }) => (
+          <ImageBox
+            key={id}
+            title={title}
+            imageUrl={imageUrl}
+            onRemove={() => removeImageBox(id)}
           />
         ))}
       </div>

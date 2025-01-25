@@ -1,6 +1,7 @@
 import React from 'react';
 
-function MessageBox({ id, onRemove, title, message }) {
+function MessageBox({ id, onRemove, title, message }) 
+{
   return (
     <div style={{ marginBottom: '10px' }}>
       <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>{title}</div>
@@ -8,9 +9,10 @@ function MessageBox({ id, onRemove, title, message }) {
         readOnly
         value={message}
         style={{
-          width: '300px',
-          height: '100px',
+          width: '800px',
+          height: '200px',
           resize: 'none',
+          overflowX: 'scroll',
           overflowY: 'scroll',
           marginBottom: '5px',
         }}
