@@ -38,7 +38,7 @@ class OxideFunction
     this.parentBinary = null;
     this.sourceFunctionMap = new Map();
     this.targetFunctionMap = new Map();
-    this.decompDict = new Map();
+    this.decompMap = new Map();
     this.capaList = [];
   }
 }
@@ -68,12 +68,22 @@ class OxideInstruction
   }
 }
 
+class OxideDecompLine 
+{
+  constructor(code) 
+  {
+    this.code = code;
+    this.associatedInstructionMap = new Map(); 
+  }
+}
+
 export 
 { 
   OxideCollection, 
   OxideBinary, 
   OxideFunction, 
   OxideBasicBlock, 
-  OxideInstruction 
+  OxideInstruction,
+  OxideDecompLine
 };
 

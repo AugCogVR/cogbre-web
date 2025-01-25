@@ -8,7 +8,8 @@ import {
   OxideBinary, 
   OxideFunction, 
   OxideBasicBlock, 
-  OxideInstruction 
+  OxideInstruction,
+  OxideDecompLine
 } from './models/OxideData';
 import MessageBox from './components/MessageBox';
 
@@ -81,6 +82,42 @@ function App()
       throw error;
     }
   }
+
+  // Call Oxide's retrieve method with the given parameters and 
+  // return whatever comes back.
+  async function retrieveTextForArbitraryModule(moduleName, oid, parameters, firstOIDOnly) 
+  {
+    let returnMe = "";
+    try 
+    {
+      const retrievedJsonString = await nexusSync(['oxide_retrieve', moduleName, [oid], parameters]);
+      if (retrievedJsonString) 
+      {
+        const retrievedJson = JSON.parse(retrievedJsonString);
+        let jsonToProcess = retrievedJson;
+
+        // If we need only the first OID, access it directly
+        if (firstOIDOnly) 
+        {
+          jsonToProcess = retrievedJson[oid];
+        }
+
+        // Loop through the keys and values in the JSON object and append them to returnMe
+        for (let key in jsonToProcess) 
+        {
+          if (jsonToProcess.hasOwnProperty(key)) 
+          {
+            returnMe += `${key}: ${JSON.stringify(jsonToProcess[key])}\n`;
+          }
+        }
+      }
+    } 
+    catch (error) 
+    {
+      console.error('Error retrieving data:', error);
+    }
+    return returnMe;
+}
 
   // Add a new message box 
   function addMessageBox(title, message)
@@ -208,6 +245,7 @@ function App()
           const instruction = new OxideInstruction(offset, str);
           const instructionMapKey = parseInt(offset);
           binary.instructionMap.set(instructionMapKey, instruction);
+
           // Set additional values
           instruction.mnemonic = value.mnemonic;
           instruction.op_str = value.op_str;
@@ -350,7 +388,7 @@ function App()
 
     // HACK: Create dummy function to contain orphaned blocks
     const mainDummyOffset = Number.MAX_VALUE;
-    const mainDummyFunction = new OxideFunction("dummy", `${mainDummyOffset}`, "dummy function");
+    const mainDummyFunction = new OxideFunction("__orphaned_blocks", `${mainDummyOffset}`, "dummy function");
     binary.functionMap.set(mainDummyOffset, mainDummyFunction);
     mainDummyFunction.parentBinary = binary;
     mainDummyFunction.vaddr = "0";
@@ -397,7 +435,7 @@ function App()
       }
     }
 
-    // ADDITIONAL ACTIVITIES
+    // CAPA
     // Load Capa-identified capability strings into respective function objects
     const capaJsonString = await nexusSync(['oxide_retrieve', 'capa_results', [binary.oid], {}]);
     if (capaJsonString) 
@@ -419,6 +457,91 @@ function App()
           }
         }
       }
+    }
+
+    // DECOMPILATION
+    // Pull decompilation for this binary
+    try 
+    {
+      const decompJsonString = await nexusSync(['oxide_retrieve', 'ghidra_decmap', [binary.oid], {'org_by_func':true}]);
+      
+      if (decompJsonString != null) 
+      {
+        const decompJson = JSON.parse(decompJsonString).decompile;
+
+        // Create the binary-level decomp line map
+        binary.decompMap = new Map();
+
+        // Walk through the functions in the JSON data
+        for (const [functionName, funcItem] of Object.entries(decompJson)) 
+        {
+          let functionObj = Array.from(binary.functionMap.values())
+          .find(func => func.name === functionName);
+  
+          if (!functionObj) 
+          {
+            console.warn(`WARNING: Could not find function object for name ${functionName}`);
+            continue;
+          }
+
+          // Walk through the offsets and populate the decomp lines and associated offsets
+          for (const [offsetKey, offsetItem] of Object.entries(funcItem)) 
+          {
+            let offset = -1;
+            try 
+            {
+              offset = parseInt(offsetKey);
+            } 
+            catch (e) {}
+
+            // For this offset, walk through the lines to add to the decomp line map
+            for (const lineJson of offsetItem.line) 
+            {
+              // Extract the line number and code text 
+              const line = lineJson;
+              const split = line.indexOf(": ");
+              const lineNoStr = line.substring(0, split);
+              const lineNo = parseInt(lineNoStr);
+              const code = line.substring(split + 2);
+
+              // Find the decomp line for this line number. Create it if not existing.
+              let decompLine = null;
+              if (functionObj.decompMap.has(lineNo))
+              {
+                decompLine = functionObj.decompMap.get(lineNo);
+              }
+              else
+              {
+                decompLine = new OxideDecompLine(code);
+                functionObj.decompMap.set(lineNo, decompLine);
+              }
+
+              // For meaningful offsets, perform several actions.
+              if (offset >= 0) 
+              {
+                // Look up the instruction associated with this offset and add it to the decompLine's associated instruction map
+                if (binary.instructionMap.has(offset)) 
+                {
+                  decompLine.associatedInstructionMap.set(offset, binary.instructionMap.get(offset));
+                }
+
+                // In binary-level map, create map for this offset if not already there.
+                if (!binary.decompMap.has(offset)) 
+                {
+                  binary.decompMap.set(offset, new Map());
+                }
+
+                // And add the line to the binary-level map for this offset.
+                binary.decompMap.get(offset).set(lineNo, decompLine);
+              }
+            }
+          }
+        }
+      }
+    } 
+    catch (error) 
+    {
+      console.error("Error retrieving decomp data:", error);
     }
   }
 
@@ -508,13 +631,19 @@ function App()
   // Handle clicking File Stats button
   async function handleFileStatsClick() 
   {
-    await addMessageBox(`File Stats for ${selectedBinary}`, 'Hello world...');
+    const currCollection = collectionMap.get(selectedCollection);
+    const currBinary = currCollection.binaryMap.get(selectedBinary);
+    let contents = await retrieveTextForArbitraryModule('file_stats', currBinary.oid, {}, true);
+    await addMessageBox(`File Stats for ${selectedBinary}`, contents);    
   }
 
   // Handle clicking Strings button
   async function handleStringsClick() 
   {
-    await addMessageBox(`Strings for ${selectedBinary}`, 'Hello world...');
+    const currCollection = collectionMap.get(selectedCollection);
+    const currBinary = currCollection.binaryMap.get(selectedBinary);
+    let contents = await retrieveTextForArbitraryModule('strings', currBinary.oid, {}, true);
+    await addMessageBox(`Strings for ${selectedBinary}`, contents);    
   }
 
   // Handle clicking Call Graph button
@@ -534,9 +663,6 @@ function App()
     // Indicate which function is chosen
     setSelectedFunction(functionName);
 
-    const currFunction = Array.from(currBinary.functionMap.values())
-        .find(func => func.name === functionName);
-
     // Enable/disable other UI elements as appropriate
     document.getElementById('DisassemblyButton').disabled = false;
     document.getElementById('DecompilationButton').disabled = false;
@@ -546,13 +672,89 @@ function App()
   // Handle clicking Disassembly button
   async function handleDisassemblyClick() 
   {
-    await addMessageBox(`Disassembly for ${selectedBinary} / ${selectedFunction}`, 'Hello world...');
+    const currCollection = collectionMap.get(selectedCollection);
+    const currBinary = currCollection.binaryMap.get(selectedBinary);
+    const currFunction = Array.from(currBinary.functionMap.values())
+        .find(func => func.name === selectedFunction);
+
+    let markedUp = ''; // Initialize the string to build the HTML-formatted markup
+    let plainText = ''; // Initialize the string to build the plain text output
+
+    // Iterate over each basic block in the function's basicBlockMap
+    currFunction.basicBlockMap.forEach((basicBlock, key) => 
+    {
+      // Iterate over each instruction in the basic block's instructionMap
+      basicBlock.instructionMap.forEach((instruction, key) => 
+      {
+        // Append formatted text for markup (HTML)
+        markedUp += `<color=#777777>${instruction.offset} <color=#99FF99>${instruction.mnemonic} <color=#FFFFFF>${instruction.op_str}\n`;
+        // Append plain text for non-markup version
+        plainText += `${instruction.offset} ${instruction.mnemonic} ${instruction.op_str}\n`;
+      });
+
+      // Add separator between blocks in the markup version
+      markedUp += `<color=#000000>------------------------------------\n`;
+    });
+
+    // console.log("DISASSEMBLY: ", markedUp);
+    await addMessageBox(`Disassembly for ${selectedBinary} / ${selectedFunction}`, plainText);
   }
 
   // Handle clicking Decompilation button
   async function handleDecompilationClick() 
   {
-    await addMessageBox(`Decompilation for ${selectedBinary} / ${selectedFunction}`, 'Hello world...');
+    const currCollection = collectionMap.get(selectedCollection);
+    const currBinary = currCollection.binaryMap.get(selectedBinary);
+    const currFunction = Array.from(currBinary.functionMap.values())
+        .find(func => func.name === selectedFunction);
+
+    let markedUp = ''; // Initialize the string to build the HTML-formatted markup
+    let plainText = ''; // Initialize the string to build the plain text output
+
+    let indentLevel = 0;
+
+    // Iterate over each line of decompiled code in the function
+    const sortedKeys = Array.from(currFunction.decompMap.keys()).sort((a, b) => a - b);
+    sortedKeys.forEach(key =>
+    {
+      const decompLine = currFunction.decompMap.get(key);
+      const code = decompLine.code;
+
+      if (code.includes('}')) 
+      {
+        indentLevel--; // Quick & dirty indenting
+      }
+    
+      markedUp += `<color=#777777>${key}: `;
+      plainText += `${key}: `;
+    
+      // Add the necessary indentation
+      for (let i = 0; i < indentLevel; i++) 
+      {
+        markedUp += "    "; // Quick & dirty indenting
+        plainText += "    "; // Quick & dirty indenting
+      }
+    
+      markedUp += `<color=#FFFFFF>${code}`;
+      plainText += `${code}`;
+    
+      // Handle associated instructions
+      decompLine.associatedInstructionMap.forEach((instruction, offset) =>
+      {
+        markedUp += `<color=#AAAA00> |${offset}|`;
+      });
+    
+      markedUp += "\n";
+      plainText += "\n";
+    
+      if (code.includes('{')) 
+      {
+        indentLevel++; // Quick & dirty indenting
+      }
+    });
+
+    // console.log("DECOMPILATION: ", markedUp);
+    await addMessageBox(`Decompilation for ${selectedBinary} / ${selectedFunction}`, plainText);
   }
 
   // Handle clicking CFG button
@@ -642,8 +844,10 @@ function App()
         <p>Selected binary: {selectedBinary}</p>
       </div>
 
-      <button id="FileStatsButton" onClick={handleFileStatsClick}>File Status</button> 
+      <button id="FileStatsButton" onClick={handleFileStatsClick}>File Stats</button> 
+      &nbsp;
       <button id="StringsButton" onClick={handleStringsClick}>Strings</button> 
+      &nbsp;
       <button id="CallGraphButton" onClick={handleCallGraphClick}>Call Graph</button> 
 
       <hr />
@@ -664,7 +868,9 @@ function App()
       </div>
 
       <button id="DisassemblyButton" onClick={handleDisassemblyClick}>Disassembly</button> 
+      &nbsp;
       <button id="DecompilationButton" onClick={handleDecompilationClick}>Decompilation</button> 
+      &nbsp;
       <button id="CFGButton" onClick={handleCFGClick}>CFG</button> 
 
       <hr />
