@@ -10,8 +10,10 @@ import
   buildBinaryMap,
   ensureBinaryInfo,
 } from './models/NexusClient';
+import Notepad from './components/Notepad';
 import MessageBox from './components/MessageBox';
 import ImageBox from './components/ImageBox';
+
 
 function App() 
 {
@@ -34,17 +36,35 @@ function App()
   const [imageBoxes, setImageBoxes] = useState([]);
 
   // Refs: variables whose state is preserved across re-renders
-  // const example = useRef(0);
+  const notepadRef = useRef();
 
 
   /////////////////////////////////////////////
   // Various support functions
   /////////////////////////////////////////////
 
-  // Test if an object is empty (this is not built into Javascript...?)
-  function isEmpty(obj) 
+  // Initialize the session with Nexus, get the list of collections,
+  // and populate the UI with collection list.
+  async function initializeWebSession() 
   {
-    return Object.keys(obj).length === 0;
+    initializeNexusSession();
+
+    const collectionMap = await buildCollectionMap();
+    setCollectionMap(collectionMap);
+
+    // Put collection names in pulldown menu
+    const sortedCollectionNames = Array.from(collectionMap.keys()).sort();
+    setCollectionNamesPulldown(sortedCollectionNames);
+
+    document.getElementById('FileStatsButton').disabled = true;
+    document.getElementById('StringsButton').disabled = true;
+    document.getElementById('CallGraphButton').disabled = true;
+    document.getElementById('DisassemblyButton').disabled = true;
+    document.getElementById('DecompilationButton').disabled = true;
+    document.getElementById('CFGButton').disabled = true;
+
+    console.log('Collections: ' + sortedCollectionNames);
+    setStatusMessage('Session initialized');
   }
 
   // Add a new message box 
@@ -85,28 +105,10 @@ function App()
     setImageBoxes(imageBoxes.filter((box) => box.id !== id));
   }
 
-  // Initialize the sesison with Nexus, get the list of collections,
-  // and populate the UI with collection list.
-  async function initializeWebSession() 
+  // Test if an object is empty (this is not built into Javascript...?)
+  function isEmpty(obj) 
   {
-    initializeNexusSession();
-
-    const collectionMap = await buildCollectionMap();
-    setCollectionMap(collectionMap);
-
-    // Put collection names in pulldown menu
-    const sortedCollectionNames = Array.from(collectionMap.keys()).sort();
-    setCollectionNamesPulldown(sortedCollectionNames);
-
-    document.getElementById('FileStatsButton').disabled = true;
-    document.getElementById('StringsButton').disabled = true;
-    document.getElementById('CallGraphButton').disabled = true;
-    document.getElementById('DisassemblyButton').disabled = true;
-    document.getElementById('DecompilationButton').disabled = true;
-    document.getElementById('CFGButton').disabled = true;
-
-    console.log('Collections: ' + sortedCollectionNames);
-    setStatusMessage('Session initialized');
+    return Object.keys(obj).length === 0;
   }
 
 
@@ -332,7 +334,7 @@ function App()
   
 
   /////////////////////////////////////////////
-  // Code entry point
+  // Page rendering
   /////////////////////////////////////////////
 
   // Executes upon every render. Sometimes twice (in dev mode). 
@@ -441,8 +443,12 @@ function App()
         </div>
       </div>
 
+      <hr />
+
+      <Notepad ref={notepadRef} />
 
       <hr />
+
       <h3>Text boxes</h3>
       <div>
         {messageBoxes.map((box) => (
@@ -457,6 +463,7 @@ function App()
       </div>
 
       <hr />
+      
       <h3>Graphs</h3>
       <div className="image-box-gallery">
         {imageBoxes.map(({ id, title, imageUrl }) => (
