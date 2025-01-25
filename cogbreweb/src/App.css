@@ -18,7 +18,7 @@
   color: #61dafb;
 }
 
-/* .image-box-gallery {
+.image-box-gallery {
   display: flex;
   flex-wrap: wrap;
   gap: 20px;
@@ -31,4 +31,30 @@
 
 button {
   margin: 5px;
+}
+
+/* Container to hold the three columns */
+.container {
+  display: flex;           /* Enable flexbox */
+  justify-content: space-between;  /* Space out the columns */
+  gap: 20px;               /* Add some gap between columns */
+}
+
+/* Each column should take equal space */
+.column {
+  flex: 1;                 /* Allow each column to grow equally */
+  padding: 10px;           /* Add padding for spacing */
+  box-sizing: border-box;  /* Make sure padding doesn't affect width */
+}
+
+/* Optional: Style the buttons container */
+.buttons {
+  margin-top: 10px;
+}
+
+/* Optional: If you want to make the columns look more visually separated */
+/* .column h3 {
+  border-bottom: 2px solid #ccc;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
 } */

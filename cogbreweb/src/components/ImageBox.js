@@ -25,7 +25,7 @@ function ImageBox({ title, imageUrl, onRemove })
     <div className="image-box">
       <h4>{title}</h4>
       <TransformWrapper
-        initialScale={0.25}
+        initialScale={1}
         minScale={0.10}
         maxScale={1}
       >
