@@ -68,5 +68,12 @@ class OxideInstruction
   }
 }
 
-export { OxideCollection, OxideBinary, OxideFunction, OxideBasicBlock, OxideInstruction };
+export 
+{ 
+  OxideCollection, 
+  OxideBinary, 
+  OxideFunction, 
+  OxideBasicBlock, 
+  OxideInstruction 
+};
 
