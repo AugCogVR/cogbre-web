@@ -14,7 +14,7 @@ function Controls()
     <div className="tools">
       <button onClick={() => zoomIn()}>+</button>
       <button onClick={() => zoomOut()}>-</button>
-      <button onClick={() => resetTransform()}>x</button>
+      <button onClick={() => resetTransform()}>Reset Zoom</button>
     </div>
   );
 }
@@ -22,12 +22,12 @@ function Controls()
 function ImageBox({ title, imageUrl, onRemove }) 
 {
   return (
-    <div className="image-box">
+    <div className="box">
       <h4>{title}</h4>
       <TransformWrapper
         initialScale={1}
         minScale={0.10}
-        maxScale={1}
+        maxScale={10}
       >
         {({ zoomIn, zoomOut, resetTransform, ...rest }) => (
           <div>
@@ -37,11 +37,8 @@ function ImageBox({ title, imageUrl, onRemove })
                 <img
                   src={imageUrl}
                   alt={title}
-                  width="100%"
-                  // style={{ transform: `scale(${state.scale})`, cursor: 'grab' }}
-                  // onMouseDown={(e) => state.setPointerDown(e)}
-                  // onMouseUp={() => state.setPointerUp()}
-                />
+                  width='800px'
+                  />
               </TransformComponent>
               </div>
           </div>

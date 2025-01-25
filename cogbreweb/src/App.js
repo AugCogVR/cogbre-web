@@ -32,11 +32,10 @@ function App()
   const [selectedFunction, setSelectedFunction] = useState('');
 
   const [messageBoxes, setMessageBoxes] = useState([]);
-
   const [imageBoxes, setImageBoxes] = useState([]);
 
   // Refs: variables whose state is preserved across re-renders
-  const notepadRef = useRef();
+  // const example = useRef();
 
 
   /////////////////////////////////////////////
@@ -381,7 +380,7 @@ function App()
 
       <hr />
 
-      <div className="container">
+      <div className="column-container">
         <div className="column">
           <h3>Collection</h3>
           <div>
@@ -445,33 +444,33 @@ function App()
 
       <hr />
 
-      <Notepad ref={notepadRef} />
+      <Notepad />
 
       <hr />
 
       <h3>Text boxes</h3>
-      <div>
+      <div className="box-container">
         {messageBoxes.map((box) => (
           <MessageBox 
             key={box.id} 
             id={box.id} 
             title={box.title}
             message={box.message} 
-            onRemove={removeMessageBox} 
+            onRemove={() => removeMessageBox(box.id)} 
           />
         ))}
       </div>
 
       <hr />
-      
+
       <h3>Graphs</h3>
-      <div className="image-box-gallery">
-        {imageBoxes.map(({ id, title, imageUrl }) => (
+      <div className="box-container">
+        {imageBoxes.map((box) => (
           <ImageBox
-            key={id}
-            title={title}
-            imageUrl={imageUrl}
-            onRemove={() => removeImageBox(id)}
+            key={box.id}
+            title={box.title}
+            imageUrl={box.imageUrl}
+            onRemove={() => removeImageBox(box.id)}
           />
         ))}
       </div>

@@ -22,7 +22,7 @@
 /* For collection / binary / function selection */
 
 /* Container to hold the three columns */
-.container {
+.column-container {
   display: flex;           /* Enable flexbox */
   justify-content: space-between;  /* Space out the columns */
   gap: 20px;               /* Add some gap between columns */
@@ -82,9 +82,34 @@ button:hover {
 } */
 
 
+/* For Boxes -- NEEDS REVIEW */
+
+/* Container that will hold the boxes and allow scrolling */
+.box-container {
+  display: flex;            /* Align the items horizontally */
+  overflow-x: auto;         /* Enable horizontal scrolling */
+  padding: 10px 0;          /* Optional: add padding for spacing */
+  gap: 10px;                /* Optional: space between message boxes */
+  white-space: nowrap;      /* Prevent the content from wrapping */
+}
+
+/* Each individual box */
+.box {
+  background-color: #f0f0f0;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  min-width: 200px;         /* Set a minimum width for each message box */
+  flex-shrink: 0;           /* Prevent the box from shrinking */
+  box-sizing: border-box;   /* Include padding and border in the width */
+  text-align: center;
+  font-size: 16px;
+}
+
+
 /* For ImageBoxes -- NEEDS REVIEW */
 
-.image-box-gallery {
+/* .image-box-gallery {
   display: flex;
   flex-wrap: wrap;
   gap: 20px;
@@ -98,4 +123,4 @@ button:hover {
 button {
   margin: 5px;
 }
-
+ */
