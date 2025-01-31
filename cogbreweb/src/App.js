@@ -67,7 +67,7 @@ function App()
   }
 
   // Add a new message box 
-  function addMessageBox(title, message)
+  async function addMessageBox(title, message)
   {
     const newMessageBox = 
     {
@@ -77,16 +77,28 @@ function App()
     };
     setMessageBoxes([...messageBoxes, newMessageBox]);
     console.log("MESSAGE BOX: ", message);
+
+    // Report slate creation to Nexus
+    const objId = 'slate:' + newMessageBox.id;
+    const objName = 'slate:' + title.replaceAll('\n', ':');
+    // ref: https://stackoverflow.com/questions/246801/how-can-you-encode-decode-a-string-to-base64-in-javascript
+    const messageB64 = btoa(String.fromCharCode(...new Uint8Array(new TextEncoder().encode(message))));
+    // const messageB64 = "derp";
+    await nexusSync(['session_update', 'event', 'create', objId, objName, messageB64]);    
   }
 
   // Remove a message box by ID
-  function removeMessageBox(id) 
+  async function removeMessageBox(id) 
   {
     setMessageBoxes(messageBoxes.filter((box) => box.id !== id));
+
+    // Report destruction to Nexus
+    const objId = 'slate:' + id;
+    await nexusSync(['session_update', 'event', 'destroy', objId]);    
   }
 
   // Add a new image box 
-  function addImageBox(title, imageUrl)
+  async function addImageBox(title, imageUrl)
   {
     const newImageBox = 
     {
@@ -96,12 +108,22 @@ function App()
     };
     setImageBoxes([...imageBoxes, newImageBox]);
     console.log("IMAGE BOX: ", imageUrl);
+
+    // Report graph creation to Nexus
+    const objId = 'graph:' + newImageBox.id;
+    const objName = 'graph:' + title.replaceAll('\n', ':');
+    const messageB64 = "N/A";
+    await nexusSync(['session_update', 'event', 'create', objId, objName, messageB64]);    
   }
 
   // Remove an image box by ID
-  function removeImageBox(id)
+  async function removeImageBox(id)
   {
     setImageBoxes(imageBoxes.filter((box) => box.id !== id));
+
+      // Report destruction to Nexus
+      const objId = 'graph:' + id;
+      await nexusSync(['session_update', 'event', 'destroy', objId]);        
   }
 
   // Test if an object is empty (this is not built into Javascript...?)
@@ -415,8 +437,8 @@ function App()
             </select>
             <p>Selected binary: <b>{selectedBinary}</b></p>
           </div>
-          <button id="FileStatsButton" onClick={handleFileStatsClick}>File Stats</button> 
           <button id="StringsButton" onClick={handleStringsClick}>Strings</button> 
+          <button id="FileStatsButton" onClick={handleFileStatsClick}>File Stats</button> 
           <button id="CallGraphButton" onClick={handleCallGraphClick}>Call Graph</button> 
         </div>
 
