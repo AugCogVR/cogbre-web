@@ -352,7 +352,15 @@ function App()
   {
     console.log('CFG YAY');
   }
-  
+
+  // Handle when the notepad contents change
+  async function handleNotepadChange(contents)
+  {
+    // console.log(`NOTEPAD CHANGE: ${contents}`);
+    const contentsB64 = btoa(String.fromCharCode(...new Uint8Array(new TextEncoder().encode(contents))));
+    await nexusSync(['session_update', 'event', 'update', 'notepad', contentsB64]);    
+  }
+
 
   /////////////////////////////////////////////
   // Page rendering
@@ -466,7 +474,7 @@ function App()
 
       <hr />
 
-      <Notepad />
+      <Notepad externalChange={handleNotepadChange} />
 
       <hr />
 

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-function Notepad()
+function Notepad({ externalChange })
 {
   // State to store the content of the notepad
   const [content, setContent] = useState("");
@@ -9,6 +9,13 @@ function Notepad()
   function handleChange(event) 
   {
     setContent(event.target.value);  // Update the state with new content
+
+    // Call the function to notify an external entity of a change 
+    // to this notepad instance. 
+    if (externalChange)
+    {
+      externalChange(event.target.value);
+    }
   };
 
   // Function to handle clearing the text area
