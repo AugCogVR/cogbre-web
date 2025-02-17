@@ -22,7 +22,14 @@ function Notepad({ externalChange })
   function handleClear()
   {
     setContent("");  // Clear the content state
-  };
+
+      // Call the function to notify an external entity of a change 
+      // to this notepad instance. 
+      if (externalChange)
+      {
+        externalChange("");
+      }
+    };
 
   return (
     <div className="box">
