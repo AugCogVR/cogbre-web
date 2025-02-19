@@ -257,7 +257,8 @@ function App()
     // Enable/disable other UI elements as appropriate
     document.getElementById('DisassemblyButton').disabled = false;
     document.getElementById('DecompilationButton').disabled = false;
-    document.getElementById('CFGButton').disabled = false;
+    // CFG not implemented yet
+    // document.getElementById('CFGButton').disabled = false;
   }
 
   // Handle clicking Disassembly button
@@ -350,6 +351,7 @@ function App()
   // Handle clicking CFG button
   async function handleCFGClick() 
   {
+    // CFG not implemented yet
     console.log('CFG YAY');
   }
 
