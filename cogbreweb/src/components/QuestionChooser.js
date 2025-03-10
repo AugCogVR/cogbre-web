@@ -67,7 +67,7 @@ function QuestionChooser({ externalChange })
 
   return (
     <div className="box">
-      <h3>Question Chooser</h3>
+      <h3>User Study Questions</h3>
       <textarea
         value={content}            // Controlled component with value tied to state
         style={{
