@@ -10,6 +10,7 @@ import
   buildBinaryMap,
   ensureBinaryInfo,
 } from './models/NexusClient';
+import QuestionChooser from './components/QuestionChooser';
 import Notepad from './components/Notepad';
 import MessageBox from './components/MessageBox';
 import ImageBox from './components/ImageBox';
@@ -355,6 +356,13 @@ function App()
     console.log('CFG YAY');
   }
 
+  // Handle when the question chooser changes
+  async function handleQuestionChooserChange(contents)
+  {
+    // console.log(`QUESTION CHOOSER CHANGE: ${contents}`);
+    await nexusSync(['session_update', 'event', 'question_select', contents]);    
+  }
+
   // Handle when the notepad contents change
   async function handleNotepadChange(contents)
   {
@@ -476,7 +484,14 @@ function App()
 
       <hr />
 
-      <Notepad externalChange={handleNotepadChange} />
+      <div className="column-container">
+        <div className="column">
+          <QuestionChooser externalChange={handleQuestionChooserChange} />
+        </div>
+        <div className="column">
+          <Notepad externalChange={handleNotepadChange} />
+        </div>
+      </div>
 
       <hr />
 
