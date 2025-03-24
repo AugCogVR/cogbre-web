@@ -73,7 +73,7 @@ function QuestionChooser({ externalChange })
     // Call the function to notify an external entity of a change 
     if (externalChange)
     {
-      externalChange("END");
+      externalChange("6");
     }
   };
 
