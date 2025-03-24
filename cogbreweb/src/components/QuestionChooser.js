@@ -65,6 +65,18 @@ function QuestionChooser({ externalChange })
     }
   };
 
+  // Function to handle pressing END button
+  function handleEND()
+  {
+    setContent("Thank you for your participation!");
+
+    // Call the function to notify an external entity of a change 
+    if (externalChange)
+    {
+      externalChange("END");
+    }
+  };
+
   return (
     <div className="box">
       <h3>User Study Questions</h3>
@@ -86,6 +98,7 @@ function QuestionChooser({ externalChange })
       <button onClick={handleQ3}>Q3</button>
       <button onClick={handleQ4}>Q4</button>
       <button onClick={handleQ5}>Q5</button>
+      <button onClick={handleEND}>END</button>
     </div>
   );
 };
