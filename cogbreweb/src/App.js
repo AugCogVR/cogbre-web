@@ -334,6 +334,7 @@ function App()
       decompLine.associatedInstructionMap.forEach((instruction, offset) =>
       {
         markedUp += `<color=#AAAA00> |${offset}|`;
+        plainText += ` /* ${offset} */`
       });
     
       markedUp += '\n';
