@@ -8,7 +8,7 @@ function QuestionChooser({ externalChange })
   // Function to handle pressing Q1 button
   function handleQ1()
   {
-    setContent("Question 1:\n\nIn this program, an input is considered correct when a function that asks for an input returns that input value instead of zero. What specific input does the function part1a require to return a nonzero value?");
+    setContent("Question 1:\n\nIn this program, a user's input is considered correct when a function that asks for an input returns the user's input value instead of zero. What specific input does the function part1a require to return a nonzero value?");
 
     // Call the function to notify an external entity of a change 
     if (externalChange)
